@@ -1,5 +1,9 @@
 package com.example.testtracker.auth;
 
-public class CurrentUserResponse {
-    
-}
+import java.util.UUID;
+
+public record CurrentUserResponse(
+        UUID loginId,
+        UUID accountId,
+        String email
+) {}
