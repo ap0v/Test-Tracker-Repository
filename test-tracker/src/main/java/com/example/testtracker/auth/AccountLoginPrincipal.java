@@ -31,10 +31,6 @@ public class AccountLoginPrincipal implements UserDetails {
         return accountId;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
     @Override
     public String getUsername() {
         return email;
