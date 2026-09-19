@@ -1,4 +1,4 @@
-package com.example.testtracker.config;
+package com.example.testtracker.auth;
 
 public class CurrentUserResponse {
     
