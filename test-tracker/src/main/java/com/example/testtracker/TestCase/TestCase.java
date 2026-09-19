@@ -27,6 +27,10 @@ class TestCase {
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
+    @NotNull
+    @Column(name = "account_id", nullable = false)
+    private UUID accountId;
+
     @NotBlank
     @Column(name = "title", nullable = false)
     private String title;
@@ -51,17 +55,17 @@ class TestCase {
     private TestCaseStatus status = TestCaseStatus.DRAFT;
 
     @Column(name = "tags", nullable = false, columnDefinition = "text[]")
-    private String[] tags;  
+    private String[] tags = new String[0];
 
-    @Column(name = "created_by", columnDefinition = "text")
-    private String createdBy;
+    @Column(name = "created_by_login_id")
+    private UUID createdByLoginId;
 
     @CreationTimestamp
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
     protected TestCase() {
@@ -69,6 +73,14 @@ class TestCase {
 
     public UUID getId() {
         return id;
+    }
+
+    public UUID getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(UUID accountId) {
+        this.accountId = accountId;
     }
 
     public String getTitle() {
@@ -127,12 +139,12 @@ class TestCase {
         this.tags = tags;
     }
 
-    public String getCreatedBy() {
-        return createdBy;
+    public UUID getCreatedByLoginId() {
+        return createdByLoginId;
     }
 
-    public void setCreatedBy(String createdBy) {
-        this.createdBy = createdBy;
+    public void setCreatedByLoginId(UUID createdByLoginId) {
+        this.createdByLoginId = createdByLoginId;
     }
 
     public Instant getCreatedAt() {
