@@ -1,3 +1,5 @@
+import TestCaseTable from '../components/TestCaseTable'
+
 function TestCasePage() {
   return (
     <main className="test-case-page">
@@ -8,10 +10,7 @@ function TestCasePage() {
 
       <section className="test-case-list" aria-labelledby="test-case-list-heading">
         <h2 id="test-case-list-heading">All test cases</h2>
-        {/* Replace this placeholder with TestCaseTable when data is connected. */}
-        <div className="test-case-empty-state">
-          <p>No test cases to display.</p>
-        </div>
+        <TestCaseTable />
       </section>
     </main>
   )

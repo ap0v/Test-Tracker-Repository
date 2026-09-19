@@ -3,11 +3,24 @@ import type { TestCase } from '../types/testCase'
 export async function getTestCases(): Promise<TestCase[]> {
     const response = await fetch('/api/testcases')
 
+    if (response.status === 401) {
+        throw new Error('Failed to fetch test cases (401 Unauthorized). Sign in to access test cases.')
+    }
+
     if (!response.ok) {
         throw new Error(`Failed to fetch test cases (${response.status})`)
     }
 
-    return response.json()
+    if (!response.headers.get('content-type')?.includes('application/json')) {
+        throw new Error('Failed to fetch test cases: the server returned a non-JSON response.')
+    }
+
+    const data: { content: TestCase[] } = await response.json()
+    if (!Array.isArray(data.content)) {
+        throw new Error('Failed to fetch test cases: the response is missing the test case list.')
+    }
+
+    return data.content
 }   
 
 export async function getTestCase(id: string): Promise<TestCase> {
