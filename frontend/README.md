@@ -1,3 +1,17 @@
+# Login boilerplate
+
+The app starts with `src/pages/LoginPage.tsx`, which includes required email/password fields, a pending state, and error feedback. A successful login displays the existing test case page.
+
+`src/api/auth.ts` submits form-encoded credentials to the existing `/api/auth/login` endpoint using session cookies and a CSRF token. It expects HTTP 204 on success and handles HTTP 401 as invalid credentials. No passwords or tokens are stored in browser storage.
+
+Left for implementation:
+
+- Add `GET /api/auth/csrf` in the backend, returning the current Spring CSRF token as `{ "headerName": "...", "token": "..." }`. The URL is permitted in `SecurityConfig`, but the controller is missing; sign-in cannot complete until it is added.
+- Restore an existing session using `/api/auth/me` on page load (the current login state is in memory and resets on refresh).
+- Add logout, session-expiry handling, and any registration/password-reset flows you need. The backend remains responsible for enforcing authentication.
+
+The existing Vite proxy forwards `/api` requests to `http://localhost:8080`.
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
