@@ -9,6 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
     @GetMapping("/me")
     public CurrentUserResponse getCurrentUser(@AuthenticationPrincipal AccountLoginPrincipal principal) {
-        return new CurrentUserResponse(principal.getLoginId(), principal.getAccountId(), principal.getEmail());
+        return new CurrentUserResponse(principal.getLoginId(), principal.getAccountId(), principal.getUsername());
     }
 }
