@@ -46,3 +46,43 @@ export async function logout(): Promise<void> {
         throw new Error('Logout failed');
     }
 }
+
+interface RegistrationCredentials extends LoginCredentials {
+    accountName: string;
+}
+
+export async function register({
+    accountName,
+    email,
+    password,
+}: RegistrationCredentials): Promise<void> {
+    const csrfResponse = await fetch('/api/auth/csrf');
+    if (!csrfResponse.ok) {
+        throw new Error('Failed to fetch CSRF token');
+    }
+
+    const { headerName, token } = await csrfResponse.json();
+
+    const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            [headerName]: token,
+        },
+        body: JSON.stringify({
+            accountName: accountName.trim(),
+            email: email.trim(),
+            password,
+        }),
+    });
+
+    if (response.status === 409) {
+        throw new Error('Email already in use');
+    }
+    if (response.status === 400) {
+        throw new Error('Check your account name, email, and password');
+    }
+    if (!response.ok) {
+        throw new Error('Registration failed');
+    }
+}
