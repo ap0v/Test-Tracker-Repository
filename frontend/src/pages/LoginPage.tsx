@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { SubmitEvent } from 'react'
+import { Link, useLocation } from 'react-router'
 import { login } from '../api/auth'
 
 interface LoginPageProps {
@@ -11,6 +12,9 @@ function LoginPage({ onLogin }: LoginPageProps) {
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const location = useLocation()
+  const registrationComplete =
+    location.state?.registrationComplete === true
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     console.log("Signing in.")
@@ -83,6 +87,14 @@ function LoginPage({ onLogin }: LoginPageProps) {
           {isSubmitting ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
+      {registrationComplete && (
+        <p role="status">
+          Account created successfully. Sign in with your email and password.
+        </p>
+      )}
+      <p>
+        Don’t have an account? <Link to="/register">Create an account</Link>
+      </p>
     </main>
   )
 }
