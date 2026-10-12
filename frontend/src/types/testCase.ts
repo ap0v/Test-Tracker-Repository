@@ -11,3 +11,5 @@ export interface TestCase {
   createdAt: string
   updatedAt: string
 }
+
+export type CreateTestCaseRequest = Omit<TestCase, 'id' | 'createdBy' | 'createdAt' | 'updatedAt'>

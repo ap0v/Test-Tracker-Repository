@@ -1,4 +1,4 @@
-import type { TestCase } from '../types/testCase'
+import type { CreateTestCaseRequest, TestCase } from '../types/testCase'
 
 export async function getTestCases(): Promise<TestCase[]> {
     const response = await fetch('/api/testcases')
@@ -33,7 +33,7 @@ export async function getTestCase(id: string): Promise<TestCase> {
   return response.json()
 }
 
-export async function createTestCase(testCase: Omit<TestCase, 'id' | 'createdAt' | 'updatedAt'>): Promise<TestCase> {
+export async function createTestCase(testCase: CreateTestCaseRequest): Promise<TestCase> {
     const response = await fetch('/api/testcases', {
         method: 'POST',
         headers: {
