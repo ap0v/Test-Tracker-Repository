@@ -5,11 +5,13 @@ import java.util.UUID;
 
 import jakarta.validation.Valid;
 
+import com.example.testtracker.auth.AccountLoginPrincipal;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController 
@@ -22,8 +24,10 @@ public class TestCaseController {
     }
 
     @PostMapping
-    public ResponseEntity<TestCase> createTestCase(@Valid @RequestBody CreateTestCaseRequest request) {
-        TestCase saved = testCaseService.createTestCase(request);
+    public ResponseEntity<TestCase> createTestCase(
+            @Valid @RequestBody CreateTestCaseRequest request,
+            @AuthenticationPrincipal AccountLoginPrincipal principal) {
+        TestCase saved = testCaseService.createTestCase(request, principal.getAccountId(), principal.getLoginId());
         return ResponseEntity.created(URI.create("/api/testcases/" + saved.getId())).body(saved);
     }
 

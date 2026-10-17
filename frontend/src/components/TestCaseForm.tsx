@@ -2,14 +2,17 @@ import { useState } from 'react'
 import { createTestCase } from '../api/testCase'
 import type { CreateTestCaseRequest, TestCase } from '../types/testCase'
 
-function TestCaseForm({ setAddTestCase }: { setAddTestCase: (value: boolean) => void }) {
+function TestCaseForm({ onCreated, onClose }: {
+    onCreated: () => void
+    onClose: () => void
+}) {
     const [title, setTitle] = useState<TestCase['title']>('')
     const [description, setDescription] = useState<TestCase['description']>(null)
     const [preconditions, setPreconditions] = useState<TestCase['preconditions']>(null)
     const [expectedResults, setExpectedResults] = useState<TestCase['expectedResults']>(null)
     const [priority, setPriority] = useState<TestCase['priority']>('MEDIUM')
     const [status, setStatus] = useState<TestCase['status']>('DRAFT')
-    const [tags, setTags] = useState<TestCase['tags']>([])
+    const [tags, setTags] = useState('')
     const [error, setError] = useState<string | null>(null)
 
     const handleAddTestCase = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -21,13 +24,13 @@ function TestCaseForm({ setAddTestCase }: { setAddTestCase: (value: boolean) => 
             expectedResults,
             priority,
             status,
-            tags,
+            tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0),
         }
 
         try {
           await createTestCase(newTestCase)
           setError(null)
-          setAddTestCase(false)
+          onCreated()
         } catch (err) {
           setError(
             err instanceof Error
@@ -46,6 +49,7 @@ function TestCaseForm({ setAddTestCase }: { setAddTestCase: (value: boolean) => 
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Title"
+            required
             data-testid="title-input"
           />
           <textarea
@@ -87,14 +91,17 @@ function TestCaseForm({ setAddTestCase }: { setAddTestCase: (value: boolean) => 
           </select>
           <input
             type="text"
-            value={tags.join(', ')}
-            onChange={(e) => setTags(e.target.value.split(',').map(tag => tag.trim()))}
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
             placeholder="Tags (comma separated)"
             data-testid="tags-input"
           />
           <button type="submit" data-testid="submit-button">Add Test Case</button>
+          <button type="button" onClick={onClose} data-testid="close-button">Close</button>
           {error && <p role="alert">{error}</p>}
         </form>
     </div>
   )
 }
+
+export default TestCaseForm

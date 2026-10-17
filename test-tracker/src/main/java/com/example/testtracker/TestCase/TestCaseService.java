@@ -21,9 +21,14 @@ public class TestCaseService {
     }
 
     @Transactional
-    public TestCase createTestCase(@NotNull @Valid CreateTestCaseRequest request) {
+    public TestCase createTestCase(
+            @NotNull @Valid CreateTestCaseRequest request,
+            UUID accountId,
+            UUID createdByLoginId) {
         TestCase testCase = new TestCase();
 
+        testCase.setAccountId(accountId);
+        testCase.setCreatedByLoginId(createdByLoginId);
         testCase.setTitle(request.title());
         testCase.setDescription(request.description());
         testCase.setPreconditions(request.preconditions());
