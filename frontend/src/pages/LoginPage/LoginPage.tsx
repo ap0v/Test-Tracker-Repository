@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { SubmitEvent } from 'react'
 import { Link, useLocation } from 'react-router'
-import { login } from '../api/auth'
+import { login } from '../../api/auth'
 
 interface LoginPageProps {
   onLogin: () => void
@@ -50,7 +50,6 @@ function LoginPage({ onLogin }: LoginPageProps) {
   return (
     <main>
       <h1>Sign in</h1>
-      <p>Sign in to access your test cases.</p>
 
       <form onSubmit={handleSubmit} aria-busy={isSubmitting} noValidate>
         <div>

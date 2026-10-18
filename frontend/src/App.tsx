@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Navigate, Route, Routes, useNavigate} from 'react-router'
-import LoginPage from './pages/LoginPage'
+import LoginPage from './pages/LoginPage/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import TestCasePage from './pages/TestCasePage'
 import './App.css'
