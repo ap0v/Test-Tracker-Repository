@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { SubmitEvent } from 'react'
 import { Link, useLocation } from 'react-router'
 import { login } from '../../api/auth'
+import styles from './LoginPage.module.css'
 
 interface LoginPageProps {
   onLogin: () => void
@@ -48,11 +49,11 @@ function LoginPage({ onLogin }: LoginPageProps) {
   }
 
   return (
-    <main>
+    <main className={styles.page}>
       <h1>Sign in</h1>
 
-      <form onSubmit={handleSubmit} aria-busy={isSubmitting} noValidate>
-        <div>
+      <form className={styles.form} onSubmit={handleSubmit} aria-busy={isSubmitting} noValidate>
+        <div className={styles.field}>
           <label htmlFor="login-email">Email</label>
           <input
             id="login-email"
@@ -66,7 +67,7 @@ function LoginPage({ onLogin }: LoginPageProps) {
           />
         </div>
 
-        <div>
+        <div className={styles.field}>
           <label htmlFor="login-password">Password</label>
           <input
             id="login-password"
