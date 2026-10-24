@@ -7,7 +7,7 @@ interface RegisterProps {
   onRegister: () => void
 }
 
-function RegisterPage({ onRegister }: RegisterProps) { 
+function RegisterPage({ onRegister }: RegisterProps) {
   const [accountName, setAccountName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -16,8 +16,6 @@ function RegisterPage({ onRegister }: RegisterProps) {
   const [error, setError] = useState<string | null>(null)
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
-    console.log("Registering.")
-
     event.preventDefault()
     if (isSubmitting) return
 
@@ -34,6 +32,7 @@ function RegisterPage({ onRegister }: RegisterProps) {
 
     if (password !== confirmPassword) {
       setError('Passwords do not match.')
+      event.currentTarget.querySelector<HTMLInputElement>('#register-confirm-password')?.focus()
       return
     }
 
@@ -42,7 +41,7 @@ function RegisterPage({ onRegister }: RegisterProps) {
     try {
       await register({ accountName: accountName.trim(), email: email.trim(), password })
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Unable to sign in. Please try again.')
+      setError(error instanceof Error ? error.message : 'Unable to create your account. Please try again.')
       return
     } finally {
       setIsSubmitting(false)
@@ -52,76 +51,89 @@ function RegisterPage({ onRegister }: RegisterProps) {
   }
 
   return (
-    <main>
-      <h1>Register</h1>
-      <p>Create an account to access your test cases.</p>
+    <main className="auth-page">
+      <section className="auth-panel" aria-labelledby="register-heading">
+        <header className="page-introduction">
+          <h1 id="register-heading">Create an account.</h1>
+          <p>Keep your test cases organized, all in one place.</p>
+        </header>
 
-      <form onSubmit={handleSubmit} aria-busy={isSubmitting} noValidate>
-        <div>
-          <label htmlFor="register-account-name">Account Name</label>
-          <input
-            id="register-account-name"
-            name="accountName"
-            type="text"
-            autoComplete="username"
-            value={accountName}
-            onChange={(event) => setAccountName(event.target.value)}
-            disabled={isSubmitting}
-            required
-          />
-        </div>
+        <form className="form-stack" onSubmit={handleSubmit} aria-busy={isSubmitting} noValidate>
+          <div className="form-field">
+            <label htmlFor="register-account-name">Account name</label>
+            <input
+              id="register-account-name"
+              name="accountName"
+              type="text"
+              autoComplete="nickname"
+              placeholder="Your name or team"
+              value={accountName}
+              onChange={(event) => setAccountName(event.target.value)}
+              disabled={isSubmitting}
+              required
+            />
+          </div>
 
-        <div>
-          <label htmlFor="login-email">Email</label>
-          <input
-            id="login-email"
-            name="email"
-            type="email"
-            autoComplete="username"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            disabled={isSubmitting}
-            required
-          />
-        </div>
+          <div className="form-field">
+            <label htmlFor="register-email">Email address</label>
+            <input
+              id="register-email"
+              name="email"
+              type="email"
+              autoComplete="username"
+              placeholder="you@company.com"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              disabled={isSubmitting}
+              required
+            />
+          </div>
 
-        <div>
-          <label htmlFor="register-password">Password</label>
-          <input
-            id="register-password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            disabled={isSubmitting}
-            required
-          />
-        </div>
+          <div className="form-field">
+            <label htmlFor="register-password">Password</label>
+            <input
+              id="register-password"
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              placeholder="Create a password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              disabled={isSubmitting}
+              required
+            />
+          </div>
 
-        <div>
-          <label htmlFor="register-confirm-password">Confirm Password</label>
-          <input
-            id="register-confirm-password"
-            name="confirmPassword"
-            type="password"
-            autoComplete="current-password"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            disabled={isSubmitting}
-            required
-          />
-        </div>
+          <div className="form-field">
+            <label htmlFor="register-confirm-password">Confirm password</label>
+            <input
+              id="register-confirm-password"
+              name="confirmPassword"
+              type="password"
+              autoComplete="new-password"
+              placeholder="Enter your password again"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              disabled={isSubmitting}
+              required
+            />
+          </div>
 
-        {error && <p role="alert">{error}</p>}
+          {error && <p className="feedback feedback--error" role="alert">{error}</p>}
 
-        <button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Registering…' : 'Register'}
-        </button>
-      </form>
-      <p>
-        Already have an account? <Link to="/">Sign in</Link>
-      </p>
+          <button className="button button--primary auth-submit" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Creating account…' : 'Create account'}
+            {!isSubmitting && (
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14m-6-6 6 6-6 6" />
+              </svg>
+            )}
+          </button>
+        </form>
+        <p className="auth-footer">
+          Already have an account? <Link to="/">Sign in</Link>
+        </p>
+      </section>
     </main>
   )
 }
