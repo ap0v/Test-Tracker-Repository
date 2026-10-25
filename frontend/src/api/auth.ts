@@ -1,5 +1,22 @@
 import type { LoginCredentials } from '../types/loginCredentials'
 
+export async function checkSession(signal?: AbortSignal): Promise<boolean> {
+    const response = await fetch('/api/auth/me', {
+        credentials: 'same-origin',
+        cache: 'no-store',
+        signal,
+    });
+
+    if (response.status === 401) {
+        return false;
+    }
+    if (!response.ok) {
+        throw new Error('Unable to check your session. Please try again.');
+    }
+
+    return true;
+}
+
 export async function login({ email, password }: LoginCredentials): Promise<void> {
     const csrfResponse = await fetch('/api/auth/csrf');
     if (!csrfResponse.ok) {

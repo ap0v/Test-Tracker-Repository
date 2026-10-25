@@ -7,7 +7,7 @@ interface TestCasePageProps {
   onLogout: () => void
 }
 
-function TestCasePage({ onLogout }: TestCasePageProps) {
+function TestCasePage({ onLogout }: Readonly<TestCasePageProps>) {
   const [addTestCase, setAddTestCase] = useState(false)
   const [listVersion, setListVersion] = useState(0)
   const [signOutError, setSignOutError] = useState<string | null>(null)
@@ -19,7 +19,7 @@ function TestCasePage({ onLogout }: TestCasePageProps) {
       await logout()
       onLogout()
     } catch (error) {
-      setSignOutError('Failed to sign out. Please try again.')
+      setSignOutError(error instanceof Error ? error.message : 'Failed to sign out. Please try again.')
     }
   }
 
