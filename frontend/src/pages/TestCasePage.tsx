@@ -76,8 +76,14 @@ function TestCasePage({ onLogout }: Readonly<TestCasePageProps>) {
         </section>
         <section className="test-case-page-footer">
           <div className="section-footer">
-            {signOutError && <p role="alert">{signOutError}</p>}
-            <button onClick={handleSignOut}>Sign Out</button>
+            {signOutError && <p className="feedback feedback--error" role="alert">{signOutError}</p>}
+            <button className="button button--secondary" type="button" onClick={handleSignOut}>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4" />
+                <path d="m16 8 4 4-4 4M20 12H9" />
+              </svg>
+              Sign Out
+            </button>
           </div>
         </section>
       </main>

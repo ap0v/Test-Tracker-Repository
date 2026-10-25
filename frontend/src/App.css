@@ -243,6 +243,22 @@ fieldset:disabled .form-field :is(input, select, textarea) {
   flex-shrink: 0;
 }
 
+.test-case-page-footer {
+  margin-top: 24px;
+}
+
+.section-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.section-footer .feedback {
+  flex: 1 1 240px;
+}
+
 .test-case-list,
 .test-case-form {
   min-width: 0;
@@ -508,6 +524,10 @@ fieldset:disabled .form-field :is(input, select, textarea) {
 
   .form-actions .button {
     flex: 1;
+  }
+
+  .section-footer .button {
+    width: 100%;
   }
 
   .test-case-table :is(th, td) {
