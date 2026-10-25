@@ -1,10 +1,28 @@
 import { useState } from 'react'
 import TestCaseTable from '../components/TestCaseTable'
 import TestCaseForm from '../components/TestCaseForm'
+import { logout } from '../api/auth'
 
-function TestCasePage() {
+interface TestCasePageProps {
+  onLogout: () => void
+}
+
+function TestCasePage({ onLogout }: TestCasePageProps) {
   const [addTestCase, setAddTestCase] = useState(false)
   const [listVersion, setListVersion] = useState(0)
+  const [signOutError, setSignOutError] = useState<string | null>(null)
+
+
+  const handleSignOut = async () => {
+    setSignOutError(null)
+    try {
+      await logout()
+      onLogout()
+    } catch (error) {
+      setSignOutError('Failed to sign out. Please try again.')
+    }
+  }
+
 
   return (
     <>
@@ -55,6 +73,12 @@ function TestCasePage() {
             <p>Review the details, status, and priority of your test cases.</p>
           </div>
           <TestCaseTable key={listVersion} />
+        </section>
+        <section className="test-case-page-footer">
+          <div className="section-footer">
+            {signOutError && <p role="alert">{signOutError}</p>}
+            <button onClick={handleSignOut}>Sign Out</button>
+          </div>
         </section>
       </main>
     </>

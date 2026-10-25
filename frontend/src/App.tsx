@@ -15,7 +15,7 @@ function App() {
         path="/"
         element={
           isLoggedIn
-            ? <TestCasePage />
+            ? <TestCasePage onLogout={() => setIsLoggedIn(false)}/>
             : <LoginPage onLogin={() => setIsLoggedIn(true)} />
         }
       />
