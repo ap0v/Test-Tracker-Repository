@@ -49,11 +49,11 @@ public class TestCaseService {
         return repository.save(testCase);
     }
 
-    public Page<TestCase> findAll(Pageable pageable) {
-        return repository.findAll(pageable);
+    public Page<TestCase> findAll(UUID accountId, Pageable pageable) {
+        return repository.findByAccountId(accountId, pageable);
     }
 
-    public Optional<TestCase> findById(UUID id) {
-        return repository.findById(id);
+    public Optional<TestCase> findById(UUID id, UUID accountId) {
+        return repository.findByIdAndAccountId(id, accountId);
     }
 }

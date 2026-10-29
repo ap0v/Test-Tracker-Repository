@@ -5,11 +5,15 @@ import com.example.testtracker.auth.AccountLoginPrincipal;
 import com.example.testtracker.auth.AccountUserDetailsService;
 import com.example.testtracker.config.SecurityConfig;
 import jakarta.validation.Validator;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -17,10 +21,12 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -132,6 +138,56 @@ class TestCaseControllerTest {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"title\": \"Test case\"}"))
+                .andExpect(status().isUnauthorized());
+        verifyNoInteractions(repository);
+    }
+
+    private TestCase testCase(UUID id, UUID ownerAccountId) {
+        TestCase testCase = new TestCase();
+        ReflectionTestUtils.setField(testCase, "id", id);
+        testCase.setAccountId(ownerAccountId);
+        testCase.setTitle("Test case");
+        return testCase;
+    }
+
+    @Test
+    void listingOnlyReturnsSignedInAccountsTestCases() throws Exception {
+        TestCase ownTestCase = testCase(testCaseId, accountId);
+        TestCase otherAccountsTestCase = testCase(UUID.randomUUID(), UUID.randomUUID());
+        when(repository.findAll(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(ownTestCase, otherAccountsTestCase)));
+        when(repository.findByAccountId(eq(accountId), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(ownTestCase)));
+
+        mockMvc.perform(get("/api/testcases").with(user(principal())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(testCaseId.toString()));
+    }
+
+    @Test
+    void fetchingOwnTestCaseByIdSucceeds() throws Exception {
+        when(repository.findByIdAndAccountId(testCaseId, accountId))
+                .thenReturn(Optional.of(testCase(testCaseId, accountId)));
+
+        mockMvc.perform(get("/api/testcases/" + testCaseId).with(user(principal())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(testCaseId.toString()));
+    }
+
+    @Test
+    void fetchingAnotherAccountsTestCaseByIdReturnsNotFound() throws Exception {
+        // The test case exists, but it belongs to a different account
+        when(repository.findById(testCaseId))
+                .thenReturn(Optional.of(testCase(testCaseId, UUID.randomUUID())));
+
+        mockMvc.perform(get("/api/testcases/" + testCaseId).with(user(principal())))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void listingStillRequiresAuthentication() throws Exception {
+        mockMvc.perform(get("/api/testcases"))
                 .andExpect(status().isUnauthorized());
         verifyNoInteractions(repository);
     }

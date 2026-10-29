@@ -37,14 +37,17 @@ public class TestCaseController {
                 size = 20,
                 sort = {"createdAt", "id"},
                 direction = Sort.Direction.DESC
-            ) Pageable pageable) {
+            ) Pageable pageable,
+            @AuthenticationPrincipal AccountLoginPrincipal principal) {
 
-        return new PagedModel<>(testCaseService.findAll(pageable));
+        return new PagedModel<>(testCaseService.findAll(principal.getAccountId(), pageable));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TestCase> getTestCaseById(@PathVariable("id") UUID id) {
-        return testCaseService.findById(id)
+    public ResponseEntity<TestCase> getTestCaseById(
+            @PathVariable("id") UUID id,
+            @AuthenticationPrincipal AccountLoginPrincipal principal) {
+        return testCaseService.findById(id, principal.getAccountId())
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
