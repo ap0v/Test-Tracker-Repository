@@ -36,6 +36,9 @@ class Folder {
     @Column(name = "name", nullable = false, columnDefinition = "text")
     private String name;
 
+    @Column(name = "created_by_login_id")
+    private UUID createdByLoginId;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -64,6 +67,10 @@ class Folder {
         return name;
     }
 
+    public UUID getCreatedByLoginId() {
+        return createdByLoginId;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
@@ -82,5 +89,9 @@ class Folder {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void setCreatedByLoginId(UUID createdByLoginId) {
+        this.createdByLoginId = createdByLoginId;
     }
 }
