@@ -166,6 +166,33 @@ class TestCaseControllerTest {
     }
 
     @Test
+    void listingWithFolderIdOnlyReturnsTestCasesInThatFolder() throws Exception {
+        UUID folderId = UUID.randomUUID();
+        TestCase inFolder = testCase(testCaseId, accountId);
+        TestCase notInFolder = testCase(UUID.randomUUID(), accountId);
+        when(repository.findByAccountId(eq(accountId), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(inFolder, notInFolder)));
+        when(repository.findByAccountIdInFolder(eq(accountId), eq(folderId), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(inFolder)));
+
+        mockMvc.perform(get("/api/testcases")
+                        .param("folderId", folderId.toString())
+                        .with(user(principal())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(testCaseId.toString()));
+    }
+
+    @Test
+    void listingWithInvalidFolderIdReturnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/testcases")
+                        .param("folderId", "not-a-uuid")
+                        .with(user(principal())))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(repository);
+    }
+
+    @Test
     void fetchingOwnTestCaseByIdSucceeds() throws Exception {
         when(repository.findByIdAndAccountId(testCaseId, accountId))
                 .thenReturn(Optional.of(testCase(testCaseId, accountId)));

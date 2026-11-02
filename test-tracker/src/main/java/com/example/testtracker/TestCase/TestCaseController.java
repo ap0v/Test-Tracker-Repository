@@ -33,6 +33,7 @@ public class TestCaseController {
 
     @GetMapping
     public PagedModel<TestCase> getAllTestCases(
+            @RequestParam(name = "folderId", required = false) UUID folderId,
             @PageableDefault(
                 size = 20,
                 sort = {"createdAt", "id"},
@@ -40,7 +41,7 @@ public class TestCaseController {
             ) Pageable pageable,
             @AuthenticationPrincipal AccountLoginPrincipal principal) {
 
-        return new PagedModel<>(testCaseService.findAll(principal.getAccountId(), pageable));
+        return new PagedModel<>(testCaseService.findAll(principal.getAccountId(), folderId, pageable));
     }
 
     @GetMapping("/{id}")

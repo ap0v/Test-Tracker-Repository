@@ -1,6 +1,8 @@
 package com.example.testtracker.Folder;
 
 import com.example.testtracker.AccountLogin.AccountLogin;
+import com.example.testtracker.TestCase.TestCaseRepository;
+import com.example.testtracker.TestCase.TestCaseService;
 import com.example.testtracker.auth.AccountLoginPrincipal;
 import com.example.testtracker.auth.AccountUserDetailsService;
 import com.example.testtracker.config.SecurityConfig;
@@ -9,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -19,6 +22,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -37,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(FolderController.class)
-@Import({SecurityConfig.class, FolderService.class})
+@Import({SecurityConfig.class, FolderService.class, TestCaseService.class})
 class FolderControllerTest {
     @Autowired
     private MockMvc mockMvc;
@@ -51,9 +55,16 @@ class FolderControllerTest {
     @MockitoBean
     private FolderRepository repository;
 
+    @MockitoBean
+    private FolderTestCaseRepository folderTestCaseRepository;
+
+    @MockitoBean
+    private TestCaseRepository testCaseRepository;
+
     private final UUID accountId = UUID.randomUUID();
     private final UUID loginId = UUID.randomUUID();
     private final UUID folderId = UUID.randomUUID();
+    private final UUID testCaseId = UUID.randomUUID();
 
     private AccountLoginPrincipal principal() {
         var login = new AccountLogin(accountId, "tester@example.com", "encoded-password");
@@ -390,5 +401,91 @@ class FolderControllerTest {
         mockMvc.perform(delete("/api/folders/" + folderId).with(user(principal())))
                 .andExpect(status().isForbidden());
         verifyNoInteractions(repository);
+    }
+
+    private String testCaseLinkPath() {
+        return "/api/folders/" + folderId + "/testcases/" + testCaseId;
+    }
+
+    private void ownFolderAndTestCaseExist() {
+        when(repository.findByIdAndAccountId(folderId, accountId))
+                .thenReturn(Optional.of(folder(folderId, accountId, null, "Smoke tests")));
+        when(testCaseRepository.existsByIdAndAccountId(testCaseId, accountId)).thenReturn(true);
+    }
+
+    @Test
+    void addingOwnTestCaseToOwnFolderSavesLinkForSignedInAccount() throws Exception {
+        ownFolderAndTestCaseExist();
+
+        mockMvc.perform(put(testCaseLinkPath()).with(user(principal())).with(csrf()))
+                .andExpect(status().isNoContent());
+
+        ArgumentCaptor<FolderTestCase> saved = ArgumentCaptor.forClass(FolderTestCase.class);
+        verify(folderTestCaseRepository).save(saved.capture());
+        assertEquals(new FolderTestCaseId(folderId, testCaseId), saved.getValue().getId());
+        assertEquals(accountId, saved.getValue().getAccountId());
+    }
+
+    @Test
+    void addingTestCaseAlreadyInFolderDoesNotSaveAgain() throws Exception {
+        ownFolderAndTestCaseExist();
+        when(folderTestCaseRepository.existsById(new FolderTestCaseId(folderId, testCaseId))).thenReturn(true);
+
+        mockMvc.perform(put(testCaseLinkPath()).with(user(principal())).with(csrf()))
+                .andExpect(status().isNoContent());
+        verify(folderTestCaseRepository, never()).save(any());
+    }
+
+    @Test
+    void addingAnotherAccountsTestCaseReturnsNotFound() throws Exception {
+        // The test case exists, but it belongs to a different account
+        when(repository.findByIdAndAccountId(folderId, accountId))
+                .thenReturn(Optional.of(folder(folderId, accountId, null, "Smoke tests")));
+        when(testCaseRepository.existsById(testCaseId)).thenReturn(true);
+
+        mockMvc.perform(put(testCaseLinkPath()).with(user(principal())).with(csrf()))
+                .andExpect(status().isNotFound());
+        verifyNoInteractions(folderTestCaseRepository);
+    }
+
+    @Test
+    void addingTestCaseToAnotherAccountsFolderReturnsNotFound() throws Exception {
+        // The folder exists, but it belongs to a different account
+        when(repository.findById(folderId))
+                .thenReturn(Optional.of(folder(folderId, UUID.randomUUID(), null, "Smoke tests")));
+        when(testCaseRepository.existsByIdAndAccountId(testCaseId, accountId)).thenReturn(true);
+
+        mockMvc.perform(put(testCaseLinkPath()).with(user(principal())).with(csrf()))
+                .andExpect(status().isNotFound());
+        verifyNoInteractions(folderTestCaseRepository);
+    }
+
+    @Test
+    void addingTestCaseStillRequiresCsrfToken() throws Exception {
+        mockMvc.perform(put(testCaseLinkPath()).with(user(principal())))
+                .andExpect(status().isForbidden());
+        verifyNoInteractions(folderTestCaseRepository);
+    }
+
+    @Test
+    void removingTestCaseFromOwnFolderDeletesOnlyTheLink() throws Exception {
+        when(repository.findByIdAndAccountId(folderId, accountId))
+                .thenReturn(Optional.of(folder(folderId, accountId, null, "Smoke tests")));
+
+        mockMvc.perform(delete(testCaseLinkPath()).with(user(principal())).with(csrf()))
+                .andExpect(status().isNoContent());
+        verify(folderTestCaseRepository).deleteById(new FolderTestCaseId(folderId, testCaseId));
+        verifyNoInteractions(testCaseRepository);
+    }
+
+    @Test
+    void removingTestCaseFromAnotherAccountsFolderReturnsNotFound() throws Exception {
+        // The folder exists, but it belongs to a different account
+        when(repository.findById(folderId))
+                .thenReturn(Optional.of(folder(folderId, UUID.randomUUID(), null, "Smoke tests")));
+
+        mockMvc.perform(delete(testCaseLinkPath()).with(user(principal())).with(csrf()))
+                .andExpect(status().isNotFound());
+        verifyNoInteractions(folderTestCaseRepository);
     }
 }

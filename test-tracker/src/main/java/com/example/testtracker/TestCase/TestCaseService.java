@@ -49,11 +49,18 @@ public class TestCaseService {
         return repository.save(testCase);
     }
 
-    public Page<TestCase> findAll(UUID accountId, Pageable pageable) {
-        return repository.findByAccountId(accountId, pageable);
+    public Page<TestCase> findAll(UUID accountId, UUID folderId, Pageable pageable) {
+        if (folderId == null) {
+            return repository.findByAccountId(accountId, pageable);
+        }
+        return repository.findByAccountIdInFolder(accountId, folderId, pageable);
     }
 
     public Optional<TestCase> findById(UUID id, UUID accountId) {
         return repository.findByIdAndAccountId(id, accountId);
+    }
+
+    public boolean existsForAccount(UUID id, UUID accountId) {
+        return repository.existsByIdAndAccountId(id, accountId);
     }
 }

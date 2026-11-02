@@ -55,4 +55,22 @@ public class FolderController {
         folderService.deleteFolder(id, principal.getAccountId());
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("/{folderId}/testcases/{testCaseId}")
+    public ResponseEntity<Void> addTestCase(
+            @PathVariable("folderId") UUID folderId,
+            @PathVariable("testCaseId") UUID testCaseId,
+            @AuthenticationPrincipal AccountLoginPrincipal principal) {
+        folderService.addTestCase(folderId, testCaseId, principal.getAccountId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{folderId}/testcases/{testCaseId}")
+    public ResponseEntity<Void> removeTestCase(
+            @PathVariable("folderId") UUID folderId,
+            @PathVariable("testCaseId") UUID testCaseId,
+            @AuthenticationPrincipal AccountLoginPrincipal principal) {
+        folderService.removeTestCase(folderId, testCaseId, principal.getAccountId());
+        return ResponseEntity.noContent().build();
+    }
 }
