@@ -51,17 +51,20 @@ public class FolderService {
         return save(folder);
     }
 
+    // Only the fields sent in the request change, so a rename never moves the folder
     @Transactional
-    public Folder updateFolder(UUID id, FolderRequest request, UUID accountId) {
+    public Folder updateFolder(UUID id, UpdateFolderRequest request, UUID accountId) {
         Folder folder = findById(id, accountId);
 
-        if (!Objects.equals(folder.getParentId(), request.parentId())) {
-            requireParent(request.parentId(), accountId);
-            requireNotOwnDescendant(id, request.parentId(), accountId);
+        if (request.hasParentId() && !Objects.equals(folder.getParentId(), request.getParentId())) {
+            requireParent(request.getParentId(), accountId);
+            requireNotOwnDescendant(id, request.getParentId(), accountId);
+            folder.setParentId(request.getParentId());
         }
 
-        folder.setName(request.name().trim());
-        folder.setParentId(request.parentId());
+        if (request.getName() != null) {
+            folder.setName(request.getName().trim());
+        }
 
         return save(folder);
     }

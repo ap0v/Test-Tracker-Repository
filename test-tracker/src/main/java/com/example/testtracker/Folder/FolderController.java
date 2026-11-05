@@ -40,10 +40,10 @@ public class FolderController {
         return ResponseEntity.created(URI.create("/api/folders/" + saved.getId())).body(saved);
     }
 
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     public Folder updateFolder(
             @PathVariable("id") UUID id,
-            @Valid @RequestBody FolderRequest request,
+            @Valid @RequestBody UpdateFolderRequest request,
             @AuthenticationPrincipal AccountLoginPrincipal principal) {
         return folderService.updateFolder(id, request, principal.getAccountId());
     }

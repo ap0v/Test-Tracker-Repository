@@ -34,6 +34,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -241,7 +242,7 @@ class FolderControllerTest {
         when(repository.findByIdAndAccountId(folderId, accountId)).thenReturn(Optional.of(existing));
         saveValidFolder();
 
-        mockMvc.perform(put("/api/folders/" + folderId)
+        mockMvc.perform(patch("/api/folders/" + folderId)
                         .with(user(principal()))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -265,7 +266,7 @@ class FolderControllerTest {
         when(repository.saveAndFlush(any(Folder.class)))
                 .thenThrow(new DataIntegrityViolationException("folders_sibling_name_unique"));
 
-        mockMvc.perform(put("/api/folders/" + folderId)
+        mockMvc.perform(patch("/api/folders/" + folderId)
                         .with(user(principal()))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -274,7 +275,35 @@ class FolderControllerTest {
     }
 
     @Test
-    void movingFolderUnderAnotherOwnFolderSucceeds() throws Exception {
+    void renamingWithoutParentIdKeepsFolderInItsCurrentParent() throws Exception {
+        UUID parentId = UUID.randomUUID();
+        when(repository.findByIdAndAccountId(folderId, accountId))
+                .thenReturn(Optional.of(folder(folderId, accountId, parentId, "Old name")));
+        saveValidFolder();
+
+        mockMvc.perform(patch("/api/folders/" + folderId)
+                        .with(user(principal()))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"New name\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("New name"))
+                .andExpect(jsonPath("$.parentId").value(parentId.toString()));
+    }
+
+    @Test
+    void renamingRejectsBlankNameBeforeSaving() throws Exception {
+        mockMvc.perform(patch("/api/folders/" + folderId)
+                        .with(user(principal()))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"   \"}"))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    void movingFolderUnderAnotherOwnFolderKeepsItsName() throws Exception {
         UUID newParentId = UUID.randomUUID();
         when(repository.findByIdAndAccountId(folderId, accountId))
                 .thenReturn(Optional.of(folder(folderId, accountId, null, "Folder")));
@@ -282,28 +311,30 @@ class FolderControllerTest {
                 .thenReturn(Optional.of(folder(newParentId, accountId, null, "New parent")));
         saveValidFolder();
 
-        mockMvc.perform(put("/api/folders/" + folderId)
+        mockMvc.perform(patch("/api/folders/" + folderId)
                         .with(user(principal()))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\": \"Folder\", \"parentId\": \"%s\"}".formatted(newParentId)))
+                        .content("{\"parentId\": \"%s\"}".formatted(newParentId)))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Folder"))
                 .andExpect(jsonPath("$.parentId").value(newParentId.toString()));
     }
 
     @Test
-    void movingFolderToTopLevelSucceeds() throws Exception {
+    void movingFolderToTopLevelWithExplicitNullParentSucceeds() throws Exception {
         UUID oldParentId = UUID.randomUUID();
         when(repository.findByIdAndAccountId(folderId, accountId))
                 .thenReturn(Optional.of(folder(folderId, accountId, oldParentId, "Folder")));
         saveValidFolder();
 
-        mockMvc.perform(put("/api/folders/" + folderId)
+        mockMvc.perform(patch("/api/folders/" + folderId)
                         .with(user(principal()))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\": \"Folder\", \"parentId\": null}"))
+                        .content("{\"parentId\": null}"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Folder"))
                 .andExpect(jsonPath("$.parentId").isEmpty());
     }
 
@@ -316,7 +347,7 @@ class FolderControllerTest {
         when(repository.findById(newParentId))
                 .thenReturn(Optional.of(folder(newParentId, UUID.randomUUID(), null, "New parent")));
 
-        mockMvc.perform(put("/api/folders/" + folderId)
+        mockMvc.perform(patch("/api/folders/" + folderId)
                         .with(user(principal()))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -330,7 +361,7 @@ class FolderControllerTest {
         when(repository.findByIdAndAccountId(folderId, accountId))
                 .thenReturn(Optional.of(folder(folderId, accountId, null, "Folder")));
 
-        mockMvc.perform(put("/api/folders/" + folderId)
+        mockMvc.perform(patch("/api/folders/" + folderId)
                         .with(user(principal()))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -351,7 +382,7 @@ class FolderControllerTest {
         when(repository.findByIdAndAccountId(grandchildId, accountId))
                 .thenReturn(Optional.of(folder(grandchildId, accountId, childId, "Grandchild")));
 
-        mockMvc.perform(put("/api/folders/" + folderId)
+        mockMvc.perform(patch("/api/folders/" + folderId)
                         .with(user(principal()))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -366,7 +397,7 @@ class FolderControllerTest {
         when(repository.findById(folderId))
                 .thenReturn(Optional.of(folder(folderId, UUID.randomUUID(), null, "Folder")));
 
-        mockMvc.perform(put("/api/folders/" + folderId)
+        mockMvc.perform(patch("/api/folders/" + folderId)
                         .with(user(principal()))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
