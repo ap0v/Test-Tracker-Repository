@@ -1,4 +1,9 @@
 import type { Folder, FolderRequest, UpdateFolderRequest } from '../types/folder';
+import { csrfHeader } from './csrf';
+
+function folderPath(id: string): string {
+    return `/api/folders/${encodeURIComponent(id)}`;
+}
 
 export async function getFolders(): Promise<Folder[]> {
     const response = await fetch('/api/folders');
@@ -16,19 +21,11 @@ export async function getFolders(): Promise<Folder[]> {
 }
 
 export async function createFolder(request: FolderRequest): Promise<Folder> {
-    const csrfResponse = await fetch('/api/auth/csrf');
-    
-    if (!csrfResponse.ok) {
-        throw new Error('Failed to fetch CSRF token');
-    }
-
-    const { headerName, token } = await csrfResponse.json()
-
     const response = await fetch('/api/folders', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            [headerName]: token
+            ...await csrfHeader()
         },
         body: JSON.stringify(request)
     });
@@ -52,19 +49,11 @@ export async function createFolder(request: FolderRequest): Promise<Folder> {
 }
 
 export async function updateFolder(id: string, request: UpdateFolderRequest): Promise<Folder> {
-    const csrfResponse = await fetch('/api/auth/csrf');
-
-    if (!csrfResponse.ok) {
-        throw new Error('Failed to fetch CSRF token');
-    }
-
-    const { headerName, token } = await csrfResponse.json()
-
-    const response = await fetch(`/api/folders/${encodeURIComponent(id)}`, {
+    const response = await fetch(folderPath(id), {
         method: 'PATCH',
         headers: {
             'Content-Type': 'application/json',
-            [headerName]: token
+            ...await csrfHeader()
         },
         body: JSON.stringify(request)
     });
@@ -90,4 +79,61 @@ export async function updateFolder(id: string, request: UpdateFolderRequest): Pr
     }
 
     return response.json();
+}
+
+// Also deletes its subfolders; the test cases inside are kept
+export async function deleteFolder(id: string): Promise<void> {
+    const response = await fetch(folderPath(id), {
+        method: 'DELETE',
+        headers: await csrfHeader()
+    });
+
+    if (!response.ok) {
+        switch (response.status) {
+            case 401:
+                throw new Error('Failed to delete folder (401 Unauthorized). Sign in to delete folders.');
+            case 404:
+                throw new Error('This folder no longer exists.');
+            default:
+                throw new Error(`Failed to delete folder (${response.status})`);
+        }
+    }
+}
+
+// Adding a test case that is already in the folder succeeds without changing anything
+export async function addTestCaseToFolder(folderId: string, testCaseId: string): Promise<void> {
+    const response = await fetch(`${folderPath(folderId)}/testcases/${encodeURIComponent(testCaseId)}`, {
+        method: 'PUT',
+        headers: await csrfHeader()
+    });
+
+    if (!response.ok) {
+        switch (response.status) {
+            case 401:
+                throw new Error('Failed to add test case to folder (401 Unauthorized). Sign in to organize test cases.');
+            case 404:
+                throw new Error('This folder or test case no longer exists.');
+            default:
+                throw new Error(`Failed to add test case to folder (${response.status})`);
+        }
+    }
+}
+
+// Only takes the test case out of the folder; the test case itself is kept
+export async function removeTestCaseFromFolder(folderId: string, testCaseId: string): Promise<void> {
+    const response = await fetch(`${folderPath(folderId)}/testcases/${encodeURIComponent(testCaseId)}`, {
+        method: 'DELETE',
+        headers: await csrfHeader()
+    });
+
+    if (!response.ok) {
+        switch (response.status) {
+            case 401:
+                throw new Error('Failed to remove test case from folder (401 Unauthorized). Sign in to organize test cases.');
+            case 404:
+                throw new Error('This folder no longer exists.');
+            default:
+                throw new Error(`Failed to remove test case from folder (${response.status})`);
+        }
+    }
 }

@@ -1,7 +1,10 @@
 import type { CreateTestCaseRequest, TestCase } from '../types/testCase'
+import { csrfHeader } from './csrf'
 
-export async function getTestCases(): Promise<TestCase[]> {
-    const response = await fetch('/api/testcases')
+// Without a folderId this returns every test case; with one, only the test cases directly in that folder
+export async function getTestCases(folderId?: string): Promise<TestCase[]> {
+    const query = folderId ? `?${new URLSearchParams({ folderId })}` : ''
+    const response = await fetch(`/api/testcases${query}`)
 
     if (response.status === 401) {
         throw new Error('Failed to fetch test cases (401 Unauthorized). Sign in to access test cases.')
@@ -34,18 +37,11 @@ export async function getTestCase(id: string): Promise<TestCase> {
 }
 
 export async function createTestCase(testCase: CreateTestCaseRequest): Promise<TestCase> {
-    const csrfResponse = await fetch('/api/auth/csrf')
-    if (!csrfResponse.ok) {
-        throw new Error('Failed to fetch CSRF token')
-    }
-
-    const { headerName, token } = await csrfResponse.json()
-
     const response = await fetch('/api/testcases', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            [headerName]: token,
+            ...await csrfHeader(),
         },
         body: JSON.stringify(testCase),
     }) 
