@@ -22,10 +22,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -215,6 +218,41 @@ class TestCaseControllerTest {
     @Test
     void listingStillRequiresAuthentication() throws Exception {
         mockMvc.perform(get("/api/testcases"))
+                .andExpect(status().isUnauthorized());
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    void deletingOwnTestCaseSucceeds() throws Exception {
+        TestCase testCase = testCase(testCaseId, accountId);
+        when(repository.findByIdAndAccountId(testCaseId, accountId)).thenReturn(Optional.of(testCase));
+
+        mockMvc.perform(delete("/api/testcases/" + testCaseId).with(user(principal())).with(csrf()))
+                .andExpect(status().isNoContent());
+        verify(repository).delete(testCase);
+    }
+
+    @Test
+    void deletingAnotherAccountsTestCaseReturnsNotFound() throws Exception {
+        // The test case exists, but it belongs to a different account
+        when(repository.findById(testCaseId))
+                .thenReturn(Optional.of(testCase(testCaseId, UUID.randomUUID())));
+
+        mockMvc.perform(delete("/api/testcases/" + testCaseId).with(user(principal())).with(csrf()))
+                .andExpect(status().isNotFound());
+        verify(repository, never()).delete(any());
+    }
+
+    @Test
+    void deletionStillRequiresCsrfToken() throws Exception {
+        mockMvc.perform(delete("/api/testcases/" + testCaseId).with(user(principal())))
+                .andExpect(status().isForbidden());
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    void deletionStillRequiresAuthentication() throws Exception {
+        mockMvc.perform(delete("/api/testcases/" + testCaseId).with(csrf()))
                 .andExpect(status().isUnauthorized());
         verifyNoInteractions(repository);
     }

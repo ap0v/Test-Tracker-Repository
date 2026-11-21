@@ -5,8 +5,10 @@ import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -47,6 +49,13 @@ public class TestCaseService {
         );
 
         return repository.save(testCase);
+    }
+
+    @Transactional
+    public void deleteTestCase(UUID id, UUID accountId) {
+        TestCase testCase = repository.findByIdAndAccountId(id, accountId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Test case not found"));
+        repository.delete(testCase);
     }
 
     public Page<TestCase> findAll(UUID accountId, UUID folderId, Pageable pageable) {

@@ -53,4 +53,13 @@ public class TestCaseController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTestCase(
+        @PathVariable("id") UUID id, 
+        @AuthenticationPrincipal AccountLoginPrincipal principal
+    ) {
+        testCaseService.deleteTestCase(id, principal.getAccountId());
+        return ResponseEntity.noContent().build();
+    }
+
 }
