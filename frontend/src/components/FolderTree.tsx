@@ -42,7 +42,7 @@ function FolderTree({ selectedFolderId, onSelect }: Readonly<FolderTreeProps>) {
       }
     }
 
-    fetchFolders()
+    void fetchFolders()
     return () => { active = false }
   }, [])
 
@@ -96,7 +96,7 @@ function FolderTree({ selectedFolderId, onSelect }: Readonly<FolderTreeProps>) {
         {renderFolders(null)}
       </ul>
 
-      {loading && <p className="folder-tree-message" role="status">Loading folders…</p>}
+      {loading && <output className="folder-tree-message">Loading folders…</output>}
       {error && <p className="feedback feedback--error" role="alert">{error}</p>}
       {!loading && !error && folders.length === 0 && <p className="folder-tree-message">No folders yet.</p>}
     </nav>

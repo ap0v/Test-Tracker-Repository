@@ -479,7 +479,7 @@ fieldset:disabled .form-field :is(input, select, textarea) {
 }
 
 .empty-state p,
-.loading-state p {
+.loading-state output {
   max-width: 320px;
   margin: 0;
   color: var(--color-muted);
@@ -646,7 +646,9 @@ fieldset:disabled .form-field :is(input, select, textarea) {
   outline-offset: 1px;
 }
 
+/* <output> is inline by default, which would ignore the vertical margin */
 .folder-tree-message {
+  display: block;
   margin: 0 20px 20px;
   color: var(--color-muted);
   font-size: 14px;

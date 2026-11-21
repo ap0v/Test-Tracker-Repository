@@ -35,14 +35,14 @@ function TestCaseTable({ folderId } : Readonly<{ folderId: string | null }>) {
       }
     }
     
-    fetchTestCases()
+    void fetchTestCases()
     return () => { active = false }
   }, [folderId])
 
   if (loading) {
     return (
-      <div className="loading-state" role="status">
-        <p>Loading your test cases…</p>
+      <div className="loading-state">
+        <output>Loading your test cases…</output>
       </div>
     )
   }
@@ -71,7 +71,7 @@ function TestCaseTable({ folderId } : Readonly<{ folderId: string | null }>) {
   }
 
   return (
-    <div className="table-scroll" role="region" aria-labelledby="test-case-list-heading" tabIndex={0}>
+    <div className="table-scroll">
       <table className="test-case-table">
         <caption className="visually-hidden">Test cases with their status, priority, and tags</caption>
         <thead>
