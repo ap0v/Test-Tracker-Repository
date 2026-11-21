@@ -39,6 +39,7 @@ function TestCaseTable({ folderId } : Readonly<{ folderId: string | null }>) {
     return () => { active = false }
   }, [folderId])
 
+
   if (loading) {
     return (
       <div className="loading-state">
@@ -70,6 +71,11 @@ function TestCaseTable({ folderId } : Readonly<{ folderId: string | null }>) {
     )
   }
 
+  function deleteTestCase() {
+    console.log('Delete')
+    return null;
+  }
+
   return (
     <div className="table-scroll">
       <table className="test-case-table">
@@ -80,6 +86,7 @@ function TestCaseTable({ folderId } : Readonly<{ folderId: string | null }>) {
             <th scope="col">Status</th>
             <th scope="col">Priority</th>
             <th scope="col">Tags</th>
+            <th scope="col"><span className="visually-hidden">Actions</span></th>
           </tr>
         </thead>
         <tbody>
@@ -105,6 +112,19 @@ function TestCaseTable({ folderId } : Readonly<{ folderId: string | null }>) {
                     ? testCase.tags.map((tag, index) => <span className="tag" key={`${tag}-${index}`}>{tag}</span>)
                     : <span className="muted">No tags</span>}
                 </div>
+              </td>
+              <td className="test-case-actions">
+                <button
+                  className="test-case-delete"
+                  type="button"
+                  aria-label={`Delete ${testCase.title}`}
+                  title="Delete test case"
+                  onClick={deleteTestCase}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </button>
               </td>
             </tr>
           ))}

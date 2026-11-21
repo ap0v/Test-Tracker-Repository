@@ -443,6 +443,47 @@ fieldset:disabled .form-field :is(input, select, textarea) {
   overflow-wrap: anywhere;
 }
 
+/* Shrinks to fit the button so the other columns keep their space */
+.test-case-table .test-case-actions {
+  width: 1%;
+  padding-left: 0;
+  text-align: right;
+}
+
+/* 28px tall so it lines up with the status and priority badges */
+.test-case-delete {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #a52727;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.test-case-delete svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.test-case-delete:hover {
+  border-color: #f2c5c5;
+  background: #fff5f5;
+}
+
+.test-case-delete:focus-visible {
+  outline: 3px solid #a52727;
+  outline-offset: 1px;
+}
+
 .muted {
   color: var(--color-muted);
 }
@@ -550,7 +591,8 @@ fieldset:disabled .form-field :is(input, select, textarea) {
 @media (prefers-reduced-motion: reduce) {
   .button,
   .form-field :is(input, select, textarea),
-  .folder-tree-item {
+  .folder-tree-item,
+  .test-case-delete {
     transition: none;
   }
 }
