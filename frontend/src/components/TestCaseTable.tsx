@@ -15,7 +15,7 @@ const priorityLabels: Record<TestCase['priority'], string> = {
   CRITICAL: 'Critical',
 }
 
-function TestCaseTable() {
+function TestCaseTable({ folderId } : Readonly<{ folderId: string | null }>) {
   const [testCases, setTestCases] = useState<TestCase[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -24,7 +24,7 @@ function TestCaseTable() {
     let active = true
     const fetchTestCases = async () => {
       try {
-        const data = await getTestCases()
+        const data = await getTestCases(folderId ?? undefined)
         if (active) setTestCases(data)
       }
       catch (error) {
@@ -34,10 +34,10 @@ function TestCaseTable() {
         if (active) setLoading(false)
       }
     }
-
+    
     fetchTestCases()
     return () => { active = false }
-  }, [])
+  }, [folderId])
 
   if (loading) {
     return (

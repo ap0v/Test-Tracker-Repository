@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import TestCaseTable from '../components/TestCaseTable'
 import TestCaseForm from '../components/TestCaseForm'
+import FolderTree from '../components/FolderTree'
 import { logout } from '../api/auth'
 
 interface TestCasePageProps {
@@ -11,7 +12,7 @@ function TestCasePage({ onLogout }: Readonly<TestCasePageProps>) {
   const [addTestCase, setAddTestCase] = useState(false)
   const [listVersion, setListVersion] = useState(0)
   const [signOutError, setSignOutError] = useState<string | null>(null)
-
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
 
   const handleSignOut = async () => {
     setSignOutError(null)
@@ -67,13 +68,19 @@ function TestCasePage({ onLogout }: Readonly<TestCasePageProps>) {
           />
         )}
 
-        <section className="test-case-list" aria-labelledby="test-case-list-heading">
-          <div className="section-heading">
-            <h2 id="test-case-list-heading">All test cases</h2>
-            <p>Review the details, status, and priority of your test cases.</p>
-          </div>
-          <TestCaseTable key={listVersion} />
-        </section>
+        <div className="test-case-workspace">
+          <FolderTree
+            selectedFolderId={selectedFolderId}
+            onSelect={setSelectedFolderId}
+          />
+          <section className="test-case-list" aria-labelledby="test-case-list-heading">
+            <div className="section-heading">
+              <h2 id="test-case-list-heading">All test cases</h2>
+              <p>Review the details, status, and priority of your test cases.</p>
+            </div>
+            <TestCaseTable key={`${listVersion}-${selectedFolderId}`} folderId={selectedFolderId} />
+          </section>
+        </div>
         <section className="test-case-page-footer">
           <div className="section-footer">
             {signOutError && <p className="feedback feedback--error" role="alert">{signOutError}</p>}
