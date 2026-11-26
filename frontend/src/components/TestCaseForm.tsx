@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { SubmitEvent } from 'react'
 import { getFolders } from '../api/folder'
 import { createTestCase } from '../api/testCase'
@@ -44,6 +44,12 @@ function TestCaseForm({ folderId: initialFolderId, onCreated, onClose }: Readonl
   // null until the folders have loaded
   const [folders, setFolders] = useState<FolderOption[] | null>(null)
   const [foldersError, setFoldersError] = useState<string | null>(null)
+  const titleInputRef = useRef<HTMLInputElement>(null)
+
+  // The form only appears after "Add test case" is clicked, so move focus to it to start typing
+  useEffect(() => {
+    titleInputRef.current?.focus()
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -53,7 +59,8 @@ function TestCaseForm({ folderId: initialFolderId, onCreated, onClose }: Readonl
         if (!active) return
         setFolders(toFolderOptions(data))
         // Drop a preselected folder that no longer exists, since it can't be shown or unchecked
-        setFolderIds(current => current.filter(id => data.some(folder => folder.id === id)))
+        const existingIds = new Set(data.map(folder => folder.id))
+        setFolderIds(current => current.filter(id => existingIds.has(id)))
       }
       catch (error) {
         if (!active) return
@@ -127,7 +134,7 @@ function TestCaseForm({ folderId: initialFolderId, onCreated, onClose }: Readonl
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Sign in with valid credentials"
               required
-              autoFocus
+              ref={titleInputRef}
               data-testid="title-input"
             />
           </div>
@@ -204,15 +211,9 @@ function TestCaseForm({ folderId: initialFolderId, onCreated, onClose }: Readonl
             />
             <p className="field-hint" id="test-case-tags-hint">Separate tags with commas.</p>
           </div>
-          <div className="form-field">
-            <span className="form-field-label" id="test-case-folders-label">Folders</span>
-            <div
-              className="folder-picker"
-              role="group"
-              aria-labelledby="test-case-folders-label"
-              aria-describedby="test-case-folders-hint"
-              data-testid="folder-picker"
-            >
+          <fieldset className="form-field form-field--group" aria-describedby="test-case-folders-hint">
+            <legend className="form-field-label">Folders</legend>
+            <div className="folder-picker" data-testid="folder-picker">
               {folderMessage && <p className="field-hint">{folderMessage}</p>}
               {foldersError && <p className="field-hint">{foldersError}</p>}
               {folders?.map(folder => (
@@ -227,7 +228,7 @@ function TestCaseForm({ folderId: initialFolderId, onCreated, onClose }: Readonl
               ))}
             </div>
             <p className="field-hint" id="test-case-folders-hint">Leave all unchecked to keep it out of every folder.</p>
-          </div>
+          </fieldset>
         </fieldset>
 
         {error && <p className="feedback feedback--error" role="alert">{error}</p>}

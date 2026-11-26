@@ -20,7 +20,7 @@ export async function getTestCases(folderId?: string): Promise<TestCase[]> {
 
     const data: { content: TestCase[] } = await response.json()
     if (!Array.isArray(data.content)) {
-        throw new Error('Failed to fetch test cases: the response is missing the test case list.')
+        throw new TypeError('Failed to fetch test cases: the response is missing the test case list.')
     }
 
     return data.content

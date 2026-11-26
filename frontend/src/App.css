@@ -88,6 +88,19 @@
   line-height: 20px;
 }
 
+/* A fieldset that groups several inputs under one field label */
+.form-field--group {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* The legend sits outside the fieldset's grid, so it needs its own spacing instead of the gap */
+.form-field--group legend {
+  margin-bottom: 6px;
+  padding: 0;
+}
+
 .folder-picker {
   display: grid;
   max-height: 176px;
@@ -415,6 +428,7 @@ fieldset:disabled .form-field :is(input, select, textarea) {
   font-size: 13px;
   font-weight: 400;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 

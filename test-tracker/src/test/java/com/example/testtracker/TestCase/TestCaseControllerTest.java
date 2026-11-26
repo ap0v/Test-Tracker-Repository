@@ -161,10 +161,11 @@ class TestCaseControllerTest {
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<FolderTestCase>> links = ArgumentCaptor.forClass(List.class);
         verify(folderTestCaseRepository).saveAll(links.capture());
-        assertEquals(
-                List.of(new FolderTestCaseId(firstFolderId, testCaseId), new FolderTestCaseId(secondFolderId, testCaseId)),
-                links.getValue().stream().map(FolderTestCase::getId).toList());
-        assertTrue(links.getValue().stream().allMatch(link -> accountId.equals(link.getAccountId())));
+        List<FolderTestCase> savedLinks = links.getValue();
+        assertEquals(2, savedLinks.size());
+        assertEquals(new FolderTestCaseId(firstFolderId, testCaseId), savedLinks.get(0).getId());
+        assertEquals(new FolderTestCaseId(secondFolderId, testCaseId), savedLinks.get(1).getId());
+        assertTrue(savedLinks.stream().allMatch(link -> accountId.equals(link.getAccountId())));
     }
 
     @Test

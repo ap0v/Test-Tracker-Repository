@@ -109,9 +109,8 @@ public class FolderService {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST, "A folder cannot be moved into itself or one of its subfolders");
             }
-            ancestorId = repository.findByIdAndAccountId(ancestorId, accountId)
-                    .map(Folder::getParentId)
-                    .orElse(null);
+            Folder ancestor = repository.findByIdAndAccountId(ancestorId, accountId).orElse(null);
+            ancestorId = ancestor == null ? null : ancestor.getParentId();
         }
     }
 
