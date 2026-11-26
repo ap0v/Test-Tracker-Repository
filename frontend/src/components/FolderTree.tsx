@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { KeyboardEvent, MouseEvent, SubmitEvent } from 'react'
-import { createFolder, getFolders } from '../api/folder'
+import { flushSync } from 'react-dom'
+import { createFolder, deleteFolder, getFolders } from '../api/folder'
 import type { Folder } from '../types/folder'
 
 interface FolderTreeProps {
@@ -93,6 +94,8 @@ function FolderTree({ selectedFolderId, onSelect }: Readonly<FolderTreeProps>) {
   const menuRef = useRef<HTMLDivElement>(null)
   // The folder button that opened the menu, so Escape can hand focus back to it
   const menuTriggerRef = useRef<HTMLButtonElement | null>(null)
+  // Where focus lands after deleting a top-level folder
+  const allTestCasesRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     let active = true
@@ -174,6 +177,54 @@ function FolderTree({ selectedFolderId, onSelect }: Readonly<FolderTreeProps>) {
     setDraft({ parentId: parent.id })
   }
 
+  // The folder plus everything nested under it, matching what the server deletes.
+  // Children pushed onto `ids` are visited by the same loop.
+  function collectSubtreeIds(rootId: string): Set<string> {
+    const ids = [rootId]
+    for (const id of ids) {
+      for (const child of childrenByParent.get(id) ?? []) ids.push(child.id)
+    }
+    return new Set(ids)
+  }
+
+  async function handleDeleteFolder(folder: Folder) {
+    // Close the menu now rather than after the handler, so it isn't left showing behind the blocking confirm dialog
+    flushSync(() => setMenu(null))
+
+    const trigger = menuTriggerRef.current
+    const removedIds = collectSubtreeIds(folder.id)
+    const subfolderCount = removedIds.size - 1
+    const subfolderLabel = subfolderCount === 1 ? 'subfolder' : 'subfolders'
+    const scope = subfolderCount > 0
+      ? `"${folder.name}" and its ${subfolderCount} ${subfolderLabel}`
+      : `"${folder.name}"`
+
+    if (!window.confirm(`Delete ${scope}? Test cases inside are kept. This can't be undone.`)) {
+      trigger?.focus()
+      return
+    }
+
+    setError(null)
+    try {
+      await deleteFolder(folder.id)
+    }
+    catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to delete folder.')
+      trigger?.focus()
+      return
+    }
+
+    // The deleted folder's button is about to disappear, so hand focus to its parent folder,
+    // or to "All test cases" for a top-level folder
+    const parentButton = trigger?.closest('ul')?.closest('li')?.querySelector<HTMLButtonElement>(':scope > .folder-tree-item')
+    const focusTarget = parentButton ?? allTestCasesRef.current
+    focusTarget?.focus()
+
+    setFolders(current => current.filter(f => !removedIds.has(f.id)))
+    if (draft?.parentId && removedIds.has(draft.parentId)) setDraft(null)
+    if (selectedFolderId !== null && removedIds.has(selectedFolderId)) onSelect(null)
+  }
+
   function addFolder() {
     setDraft({ parentId: null })
   }
@@ -211,7 +262,7 @@ function FolderTree({ selectedFolderId, onSelect }: Readonly<FolderTreeProps>) {
               </svg>
               <span className="folder-tree-label">{folder.name}</span>
             </button>
-            {/* TODO: rename, move and delete actions (updateFolder, deleteFolder) */}
+            {/* TODO: rename and move actions (updateFolder) */}
             {(childrenByParent.has(folder.id) || draft?.parentId === folder.id) && (
               <ul className="folder-tree-list">{renderFolders(folder.id)}</ul>
             )}
@@ -242,6 +293,7 @@ function FolderTree({ selectedFolderId, onSelect }: Readonly<FolderTreeProps>) {
       <ul className="folder-tree-list">
         <li>
           <button
+            ref={allTestCasesRef}
             className="folder-tree-item"
             type="button"
             onClick={() => onSelect(null)}
@@ -278,6 +330,15 @@ function FolderTree({ selectedFolderId, onSelect }: Readonly<FolderTreeProps>) {
             onClick={() => startSubfolder(menu.folder)}
           >
             Add subfolder
+          </button>
+          <hr className="context-menu-separator" />
+          <button
+            className="context-menu-item context-menu-item--danger"
+            type="button"
+            role="menuitem"
+            onClick={() => void handleDeleteFolder(menu.folder)}
+          >
+            Delete folder
           </button>
         </div>
       )}
