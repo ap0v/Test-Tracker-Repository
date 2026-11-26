@@ -56,3 +56,21 @@ export async function createTestCase(testCase: CreateTestCaseRequest): Promise<T
 
     return response.json()
 }
+
+export async function deleteTestCase(id: string): Promise<void> {
+    const response = await fetch(`/api/testcases/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: await csrfHeader(),
+    })
+
+    if (!response.ok) {
+        switch (response.status) {
+            case 401:
+                throw new Error('Failed to delete test case (401 Unauthorized). Sign in to delete test cases.')
+            case 404:
+                throw new Error('This test case no longer exists.')
+            default:
+                throw new Error(`Failed to delete test case (${response.status})`)
+        }
+    }
+}
