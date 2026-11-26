@@ -225,7 +225,17 @@ function FolderTree({ selectedFolderId, onSelect }: Readonly<FolderTreeProps>) {
     <nav className="folder-tree" aria-labelledby="folder-tree-heading">
       <div className="section-heading">
         <h2 id="folder-tree-heading">Folders</h2>
-        <button type="button" onClick={addFolder}>New Folder</button>
+        <button
+          className="folder-tree-add"
+          type="button"
+          onClick={addFolder}
+          aria-label="New folder"
+          title="New folder"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
       </div>
 
       {/* "All test cases" stays usable even if the folders fail to load */}

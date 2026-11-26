@@ -592,6 +592,7 @@ fieldset:disabled .form-field :is(input, select, textarea) {
   .button,
   .form-field :is(input, select, textarea),
   .folder-tree-item,
+  .folder-tree-add,
   .test-case-delete {
     transition: none;
   }
@@ -618,6 +619,42 @@ fieldset:disabled .form-field :is(input, select, textarea) {
   justify-content: space-between;
   gap: 12px;
   padding: 20px 20px 12px;
+}
+
+/* Sized like the delete button so it fits beside the heading without making the row taller */
+.folder-tree-add {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.folder-tree-add svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.folder-tree-add:hover {
+  border-color: #b9bcb8;
+  background: var(--color-subtle);
+  color: var(--color-text);
+}
+
+.folder-tree-add:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 1px;
 }
 
 .folder-tree-list {
