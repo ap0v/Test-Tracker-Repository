@@ -50,6 +50,11 @@ export async function createTestCase(testCase: CreateTestCaseRequest): Promise<T
         throw new Error('Failed to create test case (401 Unauthorized). Sign in to add a test case.')
     }
 
+    // Nothing is saved in this case, so the form can be resubmitted after fixing the folders
+    if (response.status === 404) {
+        throw new Error('One of the chosen folders no longer exists. Reload the page and pick the folders again.')
+    }
+
     if (!response.ok) {
         throw new Error(`Failed to create test case (${response.status})`)
     }

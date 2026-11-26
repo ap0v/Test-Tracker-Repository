@@ -115,7 +115,7 @@ Emails are trimmed and lowercased before they're stored and looked up.
 | --- | --- | --- | --- |
 | `GET` | `/api/testcases` | `200` | Paged. Optional `folderId`, `page`, `size` (default 20), `sort` (default `createdAt,desc` then `id,desc`). |
 | `GET` | `/api/testcases/{id}` | `200` | `404` if it doesn't exist or belongs to another account. |
-| `POST` | `/api/testcases` | `201` | Returns the created test case with a `Location` header. |
+| `POST` | `/api/testcases` | `201` | Returns the created test case with a `Location` header. `404` if any of `folderIds` doesn't exist or belongs to another account; nothing is saved. |
 
 Create request body:
 
@@ -127,11 +127,12 @@ Create request body:
   "expectedResults": "optional",
   "priority": "HIGH",
   "status": "READY",
-  "tags": ["auth", "smoke"]
+  "tags": ["auth", "smoke"],
+  "folderIds": ["7f3c2a9e-1b4d-4c8a-9e2f-5a6b7c8d9e0f"]
 }
 ```
 
-Only `title` is required. `priority` is `LOW`, `MEDIUM`, `HIGH` or `CRITICAL` and defaults to `MEDIUM`. `status` is `DRAFT`, `READY` or `ARCHIVED` and defaults to `DRAFT`. Tags can't be blank.
+Only `title` is required. `priority` is `LOW`, `MEDIUM`, `HIGH` or `CRITICAL` and defaults to `MEDIUM`. `status` is `DRAFT`, `READY` or `ARCHIVED` and defaults to `DRAFT`. Tags can't be blank. `folderIds` files the new test case in each listed folder in the same transaction; a folder listed twice is filed once.
 
 The list response has this shape:
 

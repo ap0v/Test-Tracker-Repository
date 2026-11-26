@@ -1,5 +1,6 @@
 package com.example.testtracker.Folder;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -14,4 +15,6 @@ public interface FolderRepository extends JpaRepository<Folder, UUID> {
     List<Folder> findByAccountId(UUID accountId, Sort sort);
 
     Optional<Folder> findByIdAndAccountId(UUID id, UUID accountId);
+
+    long countByAccountIdAndIdIn(UUID accountId, Collection<UUID> ids);
 }

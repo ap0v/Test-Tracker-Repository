@@ -1,14 +1,20 @@
 package com.example.testtracker.TestCase;
 
 import com.example.testtracker.AccountLogin.AccountLogin;
+import com.example.testtracker.Folder.FolderRepository;
+import com.example.testtracker.Folder.FolderTestCase;
+import com.example.testtracker.Folder.FolderTestCaseId;
+import com.example.testtracker.Folder.FolderTestCaseRepository;
 import com.example.testtracker.auth.AccountLoginPrincipal;
 import com.example.testtracker.auth.AccountUserDetailsService;
 import com.example.testtracker.config.SecurityConfig;
 import jakarta.validation.Validator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -19,6 +25,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -49,6 +56,12 @@ class TestCaseControllerTest {
 
     @MockitoBean
     private TestCaseRepository repository;
+
+    @MockitoBean
+    private FolderRepository folderRepository;
+
+    @MockitoBean
+    private FolderTestCaseRepository folderTestCaseRepository;
 
     private final UUID accountId = UUID.randomUUID();
     private final UUID loginId = UUID.randomUUID();
@@ -123,6 +136,69 @@ class TestCaseControllerTest {
                         .content("{\"title\": \"Test case\", \"tags\": [\"test\", \"\"]}"))
                 .andExpect(status().isBadRequest());
         verifyNoInteractions(repository);
+    }
+
+    @Test
+    void creationFilesTestCaseInEachRequestedFolderOnce() throws Exception {
+        saveValidTestCase();
+        UUID firstFolderId = UUID.randomUUID();
+        UUID secondFolderId = UUID.randomUUID();
+        when(folderRepository.countByAccountIdAndIdIn(accountId, Set.of(firstFolderId, secondFolderId)))
+                .thenReturn(2L);
+
+        mockMvc.perform(post("/api/testcases")
+                        .with(user(principal()))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title": "Filed test case",
+                                  "folderIds": ["%s", "%s", "%s"]
+                                }
+                                """.formatted(firstFolderId, secondFolderId, firstFolderId)))
+                .andExpect(status().isCreated());
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<FolderTestCase>> links = ArgumentCaptor.forClass(List.class);
+        verify(folderTestCaseRepository).saveAll(links.capture());
+        assertEquals(
+                List.of(new FolderTestCaseId(firstFolderId, testCaseId), new FolderTestCaseId(secondFolderId, testCaseId)),
+                links.getValue().stream().map(FolderTestCase::getId).toList());
+        assertTrue(links.getValue().stream().allMatch(link -> accountId.equals(link.getAccountId())));
+    }
+
+    @Test
+    void creationWithAnotherAccountsFolderReturnsNotFoundAndSavesNothing() throws Exception {
+        UUID ownFolderId = UUID.randomUUID();
+        UUID otherAccountsFolderId = UUID.randomUUID();
+        // Only one of the two folders belongs to the signed-in account
+        when(folderRepository.countByAccountIdAndIdIn(accountId, Set.of(ownFolderId, otherAccountsFolderId)))
+                .thenReturn(1L);
+
+        mockMvc.perform(post("/api/testcases")
+                        .with(user(principal()))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title": "Filed test case",
+                                  "folderIds": ["%s", "%s"]
+                                }
+                                """.formatted(ownFolderId, otherAccountsFolderId)))
+                .andExpect(status().isNotFound());
+        verify(repository, never()).save(any());
+        verifyNoInteractions(folderTestCaseRepository);
+    }
+
+    @Test
+    void creationRejectsNullFolderIdBeforeSaving() throws Exception {
+        mockMvc.perform(post("/api/testcases")
+                        .with(user(principal()))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\": \"Test case\", \"folderIds\": [null]}"))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(repository, folderRepository, folderTestCaseRepository);
     }
 
     @Test

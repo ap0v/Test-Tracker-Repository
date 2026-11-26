@@ -1,6 +1,8 @@
 package com.example.testtracker.TestCase;
 
+import java.util.LinkedHashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -13,20 +15,38 @@ import org.springframework.web.server.ResponseStatusException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
+import com.example.testtracker.Folder.FolderRepository;
+import com.example.testtracker.Folder.FolderTestCase;
+import com.example.testtracker.Folder.FolderTestCaseRepository;
+
 @Service
 @Transactional(readOnly = true)
 public class TestCaseService {
     private final TestCaseRepository repository;
+    private final FolderRepository folderRepository;
+    private final FolderTestCaseRepository folderTestCaseRepository;
 
-    public TestCaseService(TestCaseRepository repository) {
+    public TestCaseService(
+            TestCaseRepository repository,
+            FolderRepository folderRepository,
+            FolderTestCaseRepository folderTestCaseRepository) {
         this.repository = repository;
+        this.folderRepository = folderRepository;
+        this.folderTestCaseRepository = folderTestCaseRepository;
     }
 
+    // The test case and its folder links are saved together, so a bad folder id leaves nothing behind
     @Transactional
     public TestCase createTestCase(
             @NotNull @Valid CreateTestCaseRequest request,
             UUID accountId,
             UUID createdByLoginId) {
+        // A set, so listing the same folder twice still files the test case there only once
+        Set<UUID> folderIds = request.folderIds() == null ? Set.of() : new LinkedHashSet<>(request.folderIds());
+        if (!folderIds.isEmpty() && folderRepository.countByAccountIdAndIdIn(accountId, folderIds) != folderIds.size()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Folder not found");
+        }
+
         TestCase testCase = new TestCase();
 
         testCase.setAccountId(accountId);
@@ -48,7 +68,11 @@ public class TestCaseService {
             request.tags() == null ? new String[0] : request.tags().toArray(String[]::new)
         );
 
-        return repository.save(testCase);
+        TestCase saved = repository.save(testCase);
+        folderTestCaseRepository.saveAll(folderIds.stream()
+                .map(folderId -> new FolderTestCase(folderId, saved.getId(), accountId))
+                .toList());
+        return saved;
     }
 
     @Transactional

@@ -12,4 +12,7 @@ export interface TestCase {
   updatedAt: string
 }
 
-export type CreateTestCaseRequest = Omit<TestCase, 'id' | 'createdBy' | 'createdAt' | 'updatedAt'>
+export type CreateTestCaseRequest = Omit<TestCase, 'id' | 'createdBy' | 'createdAt' | 'updatedAt'> & {
+  // Folders to file the new test case in; the server rejects the whole request if any is missing
+  folderIds?: string[]
+}

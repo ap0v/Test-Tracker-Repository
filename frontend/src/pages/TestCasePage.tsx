@@ -60,6 +60,7 @@ function TestCasePage({ onLogout }: Readonly<TestCasePageProps>) {
 
         {addTestCase && (
           <TestCaseForm
+            folderId={selectedFolderId}
             onCreated={() => {
               setAddTestCase(false)
               setListVersion(version => version + 1)

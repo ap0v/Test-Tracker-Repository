@@ -1,12 +1,36 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { SubmitEvent } from 'react'
+import { getFolders } from '../api/folder'
 import { createTestCase } from '../api/testCase'
+import type { Folder } from '../types/folder'
 import type { CreateTestCaseRequest, TestCase } from '../types/testCase'
 
-function TestCaseForm({ onCreated, onClose }: {
+interface FolderOption {
+  id: string
+  label: string
+}
+
+// Labels each folder with its full path so subfolders with the same name can be told apart
+function toFolderOptions(folders: Folder[]): FolderOption[] {
+  const foldersById = new Map(folders.map(folder => [folder.id, folder]))
+  const pathOf = (folder: Folder): string => {
+    const parent = folder.parentId ? foldersById.get(folder.parentId) : undefined
+    return parent ? `${pathOf(parent)} / ${folder.name}` : folder.name
+  }
+
+  return folders
+    .map(folder => ({ id: folder.id, label: pathOf(folder) }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+}
+
+interface TestCaseFormProps {
+  // The folder selected in the sidebar when the form opened; it starts out checked. null means none
+  folderId: string | null
   onCreated: () => void
   onClose: () => void
-}) {
+}
+
+function TestCaseForm({ folderId: initialFolderId, onCreated, onClose }: Readonly<TestCaseFormProps>) {
   const [title, setTitle] = useState<TestCase['title']>('')
   const [description, setDescription] = useState<TestCase['description']>(null)
   const [preconditions, setPreconditions] = useState<TestCase['preconditions']>(null)
@@ -16,6 +40,36 @@ function TestCaseForm({ onCreated, onClose }: {
   const [tags, setTags] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [folderIds, setFolderIds] = useState<string[]>(initialFolderId ? [initialFolderId] : [])
+  // null until the folders have loaded
+  const [folders, setFolders] = useState<FolderOption[] | null>(null)
+  const [foldersError, setFoldersError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let active = true
+    const fetchFolders = async () => {
+      try {
+        const data = await getFolders()
+        if (!active) return
+        setFolders(toFolderOptions(data))
+        // Drop a preselected folder that no longer exists, since it can't be shown or unchecked
+        setFolderIds(current => current.filter(id => data.some(folder => folder.id === id)))
+      }
+      catch (error) {
+        if (!active) return
+        setFoldersError(error instanceof Error ? error.message : 'Failed to fetch folders.')
+        // Without the list nothing can be shown as checked, so don't file the test case anywhere either
+        setFolderIds([])
+      }
+    }
+
+    void fetchFolders()
+    return () => { active = false }
+  }, [])
+
+  function toggleFolder(id: string, checked: boolean) {
+    setFolderIds(current => checked ? [...current, id] : current.filter(folderId => folderId !== id))
+  }
 
   async function handleAddTestCase(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -29,6 +83,7 @@ function TestCaseForm({ onCreated, onClose }: {
       priority,
       status,
       tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0),
+      folderIds,
     }
 
     setError(null)
@@ -49,6 +104,10 @@ function TestCaseForm({ onCreated, onClose }: {
 
     onCreated()
   }
+
+  let folderMessage: string | null = null
+  if (folders === null && !foldersError) folderMessage = 'Loading folders…'
+  else if (folders?.length === 0) folderMessage = 'No folders yet.'
 
   return (
     <section className="test-case-form" id="new-test-case" aria-labelledby="new-test-case-heading">
@@ -144,6 +203,30 @@ function TestCaseForm({ onCreated, onClose }: {
               data-testid="tags-input"
             />
             <p className="field-hint" id="test-case-tags-hint">Separate tags with commas.</p>
+          </div>
+          <div className="form-field">
+            <span className="form-field-label" id="test-case-folders-label">Folders</span>
+            <div
+              className="folder-picker"
+              role="group"
+              aria-labelledby="test-case-folders-label"
+              aria-describedby="test-case-folders-hint"
+              data-testid="folder-picker"
+            >
+              {folderMessage && <p className="field-hint">{folderMessage}</p>}
+              {foldersError && <p className="field-hint">{foldersError}</p>}
+              {folders?.map(folder => (
+                <label className="folder-picker-option" key={folder.id}>
+                  <input
+                    type="checkbox"
+                    checked={folderIds.includes(folder.id)}
+                    onChange={(e) => toggleFolder(folder.id, e.target.checked)}
+                  />
+                  {folder.label}
+                </label>
+              ))}
+            </div>
+            <p className="field-hint" id="test-case-folders-hint">Leave all unchecked to keep it out of every folder.</p>
           </div>
         </fieldset>
 

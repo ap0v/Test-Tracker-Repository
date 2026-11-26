@@ -82,6 +82,44 @@
   box-shadow: 0 0 0 3px #3b4ed219;
 }
 
+/* For a field label that names a group of inputs instead of a single one */
+.form-field-label {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.folder-picker {
+  display: grid;
+  max-height: 176px;
+  overflow-y: auto;
+  gap: 4px;
+  padding: 8px 15px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background-color: var(--color-surface);
+}
+
+.folder-picker .field-hint {
+  padding: 4px 0;
+}
+
+.folder-picker-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+/* Undo the full-width text box styling that .form-field gives every input */
+.form-field .folder-picker-option input {
+  width: auto;
+  min-height: 0;
+  padding: 0;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
 .field-hint {
   margin: 0;
   color: var(--color-muted);
